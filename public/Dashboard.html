@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Farming Data Visualizations</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* Universal box-sizing for consistent layout */
+    * {
+      box-sizing: border-box;
+    }
+
+    /* Body styling: full height, farming-themed background, Poppins font, light text color, centered content */
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      /* Deep earthy green gradient for farming feel */
+      background: linear-gradient(135deg, #2e4a3a, #1a2b20);
+      color: #e0e0e0; /* Light gray text */
+      min-height: 100vh; /* Full viewport height */
+      display: flex;
+      flex-direction: column; /* Stack content vertically */
+      align-items: center; /* Center content horizontally */
+      padding: 20px; /* Padding around the content */
+      overflow-y: auto; /* Allow scrolling if content overflows */
+    }
+
+    /* Main title for the page */
+    h1 {
+      color: #98fb98; /* Vibrant green for AI/tech feel */
+      margin-bottom: 30px;
+      font-size: 2.5rem;
+      font-weight: 700;
+      text-shadow: 0 0 10px rgba(152, 251, 152, 0.5); /* Subtle glow */
+    }
+
+    /* Main container for all charts */
+    .charts-container {
+      max-width: 1200px; /* Max width for readability */
+      width: 100%; /* Full width up to max-width */
+      display: grid; /* Use CSS Grid for flexible layout */
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Responsive columns */
+      gap: 30px; /* Space between chart cards */
+      padding: 20px;
+      /* Slightly lighter dark green for the container */
+      background: #203a2e;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Individual chart card styling */
+    .chart-card {
+      /* Darker green for individual cards, like rich soil */
+      background: #2a4030;
+      border-radius: 12px;
+      padding: 25px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .chart-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .chart-card h2 {
+      color: #ffcc00; /* Golden yellow for harvest/sun */
+      margin-top: 0;
+      margin-bottom: 20px;
+      font-size: 1.6rem;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    /* Canvas styling for charts */
+    .chart-card canvas {
+      width: 100% !important; /* Ensure canvas fills its container */
+      height: 280px !important; /* Fixed height for consistency */
+    }
+
+    /* Global chart options for consistency */
+    .chart-global-options {
+      margin-bottom: 30px;
+      padding: 15px 25px;
+      /* Dark green background for controls */
+      background: #2a4030;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .chart-global-options label {
+      font-size: 1.1rem;
+      color: #e0e0e0;
+    }
+
+    .chart-global-options select,
+    .chart-global-options button {
+      padding: 8px 15px;
+      border-radius: 8px;
+      border: 1px solid #444;
+      /* Darker green for input elements */
+      background-color: #3a503a;
+      color: #e0e0e0;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .chart-global-options select:hover,
+    .chart-global-options button:hover {
+      /* Slightly lighter green on hover */
+      background-color: #4a604a;
+      border-color: #666;
+    }
+
+    .chart-global-options button {
+      /* Vibrant green gradient for buttons */
+      background: linear-gradient(90deg, #66bb6a, #43a047);
+      border: none;
+      box-shadow: 0 3px 10px rgba(102, 187, 106, 0.4);
+    }
+
+    .chart-global-options button:hover {
+      box-shadow: 0 5px 15px rgba(102, 187, 106, 0.6);
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 2rem;
+      }
+      .charts-container {
+        grid-template-columns: 1fr; /* Single column on small screens */
+        padding: 15px;
+        gap: 20px;
+      }
+      .chart-card {
+        padding: 20px;
+      }
+      .chart-card h2 {
+        font-size: 1.4rem;
+      }
+      .chart-card canvas {
+        height: 250px !important;
+      }
+      .chart-global-options {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+        padding: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>AI Farming Data Visualizations</h1>
+
+  <div class="chart-global-options">
+    <label for="updateFrequency">Update Frequency:</label>
+    <select id="updateFrequency">
+      <option value="1000">1 Second</option>
+      <option value="2000" selected>2 Seconds</option>
+      <option value="5000">5 Seconds</option>
+      <option value="10000">10 Seconds</option>
+    </select>
+    <button id="resetCharts">Reset All Charts</button>
+  </div>
+
+  <div class="charts-container">
+    <div class="chart-card">
+      <h2>Crop Health Trend</h2>
+      <canvas id="lineChart"></canvas>
+    </div>
+
+    <div class="chart-card">
+      <h2>Daily Resource Consumption</h2>
+      <canvas id="barChart"></canvas>
+    </div>
+
+    <div class="chart-card">
+      <h2>Farm Area Allocation</h2>
+      <canvas id="doughnutChart"></canvas>
+    </div>
+
+    <div class="chart-card">
+      <h2>Yield vs. Water Usage</h2>
+      <canvas id="scatterChart"></canvas>
+    </div>
+
+    <div class="chart-card">
+      <h2>Pest & Disease Risk Score</h2>
+      <canvas id="polarAreaChart"></canvas>
+    </div>
+
+    <div class="chart-card">
+      <h2>Farm Productivity Metrics</h2>
+      <canvas id="radarChart"></canvas>
+    </div>
+  </div>
+
+  <script>
+    // --- Utility Functions for Data Generation ---
+
+    /**
+     * Generates a random value within a given range, with optional step.
+     * @param {number} min - Minimum value.
+     * @param {number} max - Maximum value.
+     * @param {number} [step=0.1] - Step for rounding.
+     * @returns {number} Random value.
+     */
+    function getRandomValue(min, max, step = 0.1) {
+      return (Math.round((Math.random() * (max - min) + min) / step) * step);
+    }
+
+    /**
+     * Generates an array of random data points for a line chart.
+     * @param {number} count - Number of data points.
+     * @param {number} min - Minimum value.
+     * @param {number} max - Maximum value.
+     * @param {number} [initialValue] - Optional initial value.
+     * @returns {Array<number>} Array of data points.
+     */
+    function generateLineData(count, min, max, initialValue) {
+      const data = [];
+      let lastValue = initialValue !== undefined ? initialValue : getRandomValue(min, max);
+      for (let i = 0; i < count; i++) {
+        const delta = (Math.random() - 0.5) * (max - min) * 0.05; // Small random step
+        lastValue = Math.max(min, Math.min(max, lastValue + delta));
+        data.push(Number(lastValue.toFixed(1)));
+      }
+      return data;
+    }
+
+    /**
+     * Generates random data for a bar chart.
+     * @param {number} count - Number of bars.
+     * @param {number} min - Minimum bar height.
+     * @param {number} max - Maximum bar height.
+     * @returns {Array<number>} Array of bar heights.
+     */
+    function generateBarData(count, min, max) {
+      return Array.from({ length: count }, () => getRandomValue(min, max, 1));
+    }
+
+    /**
+     * Generates random data for a doughnut/pie chart.
+     * @param {number} count - Number of segments.
+     * @param {number} min - Minimum segment value.
+     * @param {number} max - Maximum segment value.
+     * @returns {Array<number>} Array of segment values.
+     */
+    function generateDoughnutData(count, min, max) {
+      return Array.from({ length: count }, () => getRandomValue(min, max, 1));
+    }
+
+    /**
+     * Generates random data for a scatter plot.
+     * @param {number} count - Number of points.
+     * @param {number} xMin - Minimum x value.
+     * @param {number} xMax - Maximum x value.
+     * @param {number} yMin - Minimum y value.
+     * @param {number} yMax - Maximum y value.
+     * @returns {Array<Object>} Array of {x, y} objects.
+     */
+    function generateScatterData(count, xMin, xMax, yMin, yMax) {
+      return Array.from({ length: count }, () => ({
+        x: getRandomValue(xMin, xMax, 0.5),
+        y: getRandomValue(yMin, yMax, 0.5)
+      }));
+    }
+
+    // --- Chart Data Initialization ---
+    // Increased DATA_POINTS for more data in line and scatter charts
+    const DATA_POINTS = 50; /* Increased from 20 to 50 */
+    const labels = Array.from({ length: DATA_POINTS }, (_, i) => `Time ${i + 1}`); /* More generic time labels */
+    const shortLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+    let lineChartData = generateLineData(DATA_POINTS, 5, 95, 50); /* Adjusted range for more variation */
+    let barChartData = generateBarData(7, 40, 180); /* Adjusted range for more variation */
+    let doughnutChartData = generateDoughnutData(4, 25, 120); /* Adjusted range for more variation */
+    let scatterChartData = generateScatterData(DATA_POINTS, 5, 120, 40, 250); /* Adjusted range for more variation */
+    let polarAreaChartData = generateDoughnutData(5, 20, 150); /* Adjusted range for more variation */
+    let radarChartData = [
+      generateBarData(5, 50, 110), /* Adjusted range */
+      generateBarData(5, 30, 90) /* Adjusted range */
+    ];
+
+    // --- Chart.js Global Options ---
+    const commonChartOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 800 },
+      plugins: {
+        legend: {
+          labels: {
+            color: '#e0e0e0',
+            font: { size: 14 }
+          }
+        },
+        tooltip: {
+          /* Darker, more organic tooltip background */
+          backgroundColor: 'rgba(42, 64, 48, 0.9)',
+          titleColor: '#98fb98', /* Vibrant green for tooltip title */
+          bodyColor: '#e0e0e0',
+          borderColor: '#98fb98', /* Vibrant green border */
+          borderWidth: 1,
+          cornerRadius: 8,
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: '#b3b3b3' },
+          grid: { color: 'rgba(255, 255, 255, 0.05)' }
+        },
+        y: {
+          ticks: { color: '#b3b3b3' },
+          grid: { color: 'rgba(255, 255, 255, 0.05)' }
+        }
+      }
+    };
+
+    // Function to create a dynamic linear gradient for chart background
+    function createChartGradient(context, color) {
+        const chart = context.chart;
+        const {ctx, chartArea} = chart;
+        if (!chartArea) {
+            return null;
+        }
+        const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+        gradient.addColorStop(0, color.replace('1)', '0.1)'));
+        gradient.addColorStop(1, color.replace('1)', '0.6)'));
+        return gradient;
+    }
+
+    // --- Chart Instances ---
+
+    // Line Chart: Crop Health Trend
+    const lineCtx = document.getElementById('lineChart').getContext('2d');
+    const lineChart = new Chart(lineCtx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Crop Health Score',
+          data: lineChartData,
+          borderColor: '#7CFC00', /* Lawn Green */
+          backgroundColor: (context) => createChartGradient(context, 'rgba(124, 252, 0, 1)'),
+          fill: true,
+          tension: 0.4,
+          pointRadius: 2, /* Reduced point radius for more data points */
+          pointBackgroundColor: '#7CFC00',
+          pointBorderColor: '#fff',
+          pointHoverRadius: 4,
+        }]
+      },
+      options: {
+        ...commonChartOptions,
+        scales: {
+          x: { ...commonChartOptions.scales.x, display: false }, /* Hide x-axis for cleaner look */
+          y: { ...commonChartOptions.scales.y, beginAtZero: true, max: 100, /* Max health score */
+            title: { display: true, text: 'Health Score', color: '#b3b3b3' }
+          }
+        }
+      }
+    });
+
+    // Bar Chart: Daily Resource Consumption
+    const barCtx = document.getElementById('barChart').getContext('2d');
+    const barChart = new Chart(barCtx, {
+      type: 'bar',
+      data: {
+        labels: shortLabels,
+        datasets: [{
+          label: 'Water Usage (L)',
+          data: barChartData,
+          backgroundColor: [
+            'rgba(100, 149, 237, 0.8)', /* Cornflower Blue */
+            'rgba(100, 149, 237, 0.8)',
+            'rgba(100, 149, 237, 0.8)',
+            'rgba(100, 149, 237, 0.8)',
+            'rgba(100, 149, 237, 0.8)',
+            'rgba(100, 149, 237, 0.8)',
+            'rgba(100, 149, 237, 0.8)'
+          ],
+          borderColor: [
+            'rgba(100, 149, 237, 1)',
+            'rgba(100, 149, 237, 1)',
+            'rgba(100, 149, 237, 1)',
+            'rgba(100, 149, 237, 1)',
+            'rgba(100, 149, 237, 1)',
+            'rgba(100, 149, 237, 1)',
+            'rgba(100, 149, 237, 1)'
+          ],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        ...commonChartOptions,
+        scales: {
+          x: { ...commonChartOptions.scales.x, title: { display: true, text: 'Day of Week', color: '#b3b3b3' } },
+          y: { ...commonChartOptions.scales.y, beginAtZero: true, title: { display: true, text: 'Liters', color: '#b3b3b3' } }
+        }
+      }
+    });
+
+    // Doughnut Chart: Farm Area Allocation
+    const doughnutCtx = document.getElementById('doughnutChart').getContext('2d');
+    const doughnutChart = new Chart(doughnutCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Wheat Field', 'Corn Field', 'Vegetable Patch', 'Orchard'],
+        datasets: [{
+          label: 'Area (%)',
+          data: doughnutChartData,
+          backgroundColor: [
+            'rgba(255, 204, 0, 0.8)',  /* Yellow for wheat */
+            'rgba(255, 152, 0, 0.8)',  /* Orange for corn */
+            'rgba(60, 179, 113, 0.8)', /* Medium Sea Green for vegetables */
+            'rgba(178, 34, 34, 0.8)'   /* Firebrick for orchard */
+          ],
+          borderColor: '#2a4030', /* Card background color */
+          borderWidth: 2
+        }]
+      },
+      options: {
+        ...commonChartOptions,
+        cutout: '70%', /* Make it a doughnut */
+        plugins: {
+          ...commonChartOptions.plugins,
+          legend: {
+            position: 'right', /* Position legend to the right */
+            labels: {
+              color: '#e0e0e0',
+              font: { size: 12 }
+            }
+          }
+        }
+      }
+    });
+
+    // Scatter Chart: Yield vs. Water Usage
+    const scatterCtx = document.getElementById('scatterChart').getContext('2d');
+    const scatterChart = new Chart(scatterCtx, {
+      type: 'scatter',
+      data: {
+        datasets: [{
+          label: 'Yield (kg/ha) vs. Water (L/m²)',
+          data: scatterChartData,
+          backgroundColor: 'rgba(255, 215, 0, 0.8)', /* Gold */
+          borderColor: 'rgba(255, 215, 0, 1)',
+          pointRadius: 4, /* Reduced point radius for more data points */
+          pointHoverRadius: 6,
+        }]
+      },
+      options: {
+        ...commonChartOptions,
+        scales: {
+          x: {
+            ...commonChartOptions.scales.x,
+            title: {
+              display: true,
+              text: 'Water Usage (L/m²)',
+              color: '#b3b3b3'
+            }
+          },
+          y: {
+            ...commonChartOptions.scales.y,
+            title: {
+              display: true,
+              text: 'Crop Yield (kg/ha)',
+              color: '#b3b3b3'
+            }
+          }
+        }
+      }
+    });
+
+    // Polar Area Chart: Pest & Disease Risk Score
+    const polarAreaCtx = document.getElementById('polarAreaChart').getContext('2d');
+    const polarAreaChart = new Chart(polarAreaCtx, {
+      type: 'polarArea',
+      data: {
+        labels: ['Aphids', 'Fungal Blight', 'Weeds', 'Nutrient Deficiency', 'Drought Stress'],
+        datasets: [{
+          label: 'Risk Score',
+          data: polarAreaChartData,
+          backgroundColor: [
+            'rgba(255, 69, 0, 0.8)',    /* Orange Red for high risk */
+            'rgba(255, 165, 0, 0.8)',   /* Orange */
+            'rgba(255, 215, 0, 0.8)',   /* Gold */
+            'rgba(124, 252, 0, 0.8)',   /* Lawn Green for low risk */
+            'rgba(30, 144, 255, 0.8)'   /* Dodger Blue for water related stress */
+          ],
+          borderColor: '#2a4030',
+          borderWidth: 2
+        }]
+      },
+      options: {
+        ...commonChartOptions,
+        scales: {
+          r: { /* Radial scale for polar area */
+            pointLabels: {
+              color: '#e0e0e0',
+              font: { size: 12 }
+            },
+            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+            angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
+            ticks: {
+              color: '#b3b3b3',
+              backdropColor: 'transparent', /* Hide tick background */
+              font: { size: 10 }
+            }
+          }
+        },
+        plugins: {
+          ...commonChartOptions.plugins,
+          legend: {
+            position: 'bottom',
+            labels: {
+              color: '#e0e0e0',
+              font: { size: 12 }
+            }
+          }
+        }
+      }
+    });
+
+    // Radar Chart: Farm Productivity Metrics
+    const radarCtx = document.getElementById('radarChart').getContext('2d');
+    const radarChart = new Chart(radarCtx, {
+      type: 'radar',
+      data: {
+        labels: ['Soil Quality', 'Water Efficiency', 'Pest Control Effectiveness', 'Growth Rate', 'Harvest Efficiency'],
+        datasets: [{
+          label: 'Current Farm Performance',
+          data: radarChartData[0],
+          backgroundColor: 'rgba(255, 127, 80, 0.2)', /* Light Coral */
+          borderColor: 'rgba(255, 127, 80, 1)',
+          borderWidth: 2,
+          pointBackgroundColor: 'rgba(255, 127, 80, 1)',
+          pointBorderColor: '#fff',
+          pointHoverBackgroundColor: '#fff',
+          pointHoverBorderColor: 'rgba(255, 127, 80, 1)'
+        }, {
+          label: 'Optimal Target',
+          data: radarChartData[1],
+          backgroundColor: 'rgba(100, 149, 237, 0.2)', /* Light Cornflower Blue */
+          borderColor: 'rgba(100, 149, 237, 1)',
+          borderWidth: 2,
+          pointBackgroundColor: 'rgba(100, 149, 237, 1)',
+          pointBorderColor: '#fff',
+          pointHoverBackgroundColor: '#fff',
+          pointHoverBorderColor: 'rgba(100, 149, 237, 1)'
+        }]
+      },
+      options: {
+        ...commonChartOptions,
+        scales: {
+          r: { /* Radial scale for radar chart */
+            angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
+            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+            pointLabels: {
+              color: '#e0e0e0',
+              font: { size: 12 }
+            },
+            ticks: {
+              backdropColor: 'transparent',
+              color: '#b3b3b3',
+              font: { size: 10 }
+            }
+          }
+        }
+      }
+    });
+
+    // --- Update Logic ---
+    let updateInterval; // Variable to hold the interval ID
+
+    /**
+     * Updates all charts with new simulated data.
+     */
+    function updateAllCharts() {
+      // Update Line Chart
+      lineChartData.shift();
+      lineChartData.push(getRandomValue(5, 95, 0.1));
+      lineChart.data.datasets[0].data = lineChartData;
+      lineChart.update();
+
+      // Update Bar Chart
+      barChartData = generateBarData(7, 40, 180);
+      barChart.data.datasets[0].data = barChartData;
+      barChart.update();
+
+      // Update Doughnut Chart
+      doughnutChartData = generateDoughnutData(4, 25, 120);
+      doughnutChart.data.datasets[0].data = doughnutChartData;
+      doughnutChart.update();
+
+      // Update Scatter Chart
+      scatterChartData.shift(); /* Shift out oldest point */
+      scatterChartData.push(generateScatterData(1, 5, 120, 40, 250)[0]); /* Add one new point */
+      scatterChart.data.datasets[0].data = scatterChartData;
+      scatterChart.update();
+
+
+      // Update Polar Area Chart
+      polarAreaChartData = generateDoughnutData(5, 20, 150);
+      polarAreaChart.data.datasets[0].data = polarAreaChartData;
+      polarAreaChart.update();
+
+      // Update Radar Chart
+      radarChartData = [
+        generateBarData(5, 50, 110),
+        generateBarData(5, 30, 90)
+      ];
+      radarChart.data.datasets[0].data = radarChartData[0];
+      radarChart.data.datasets[1].data = radarChartData[1];
+      radarChart.update();
+    }
+
+    /**
+     * Starts the data update interval based on selected frequency.
+     */
+    function startUpdateInterval() {
+      clearInterval(updateInterval); // Clear any existing interval
+      const frequency = document.getElementById('updateFrequency').value;
+      updateInterval = setInterval(updateAllCharts, parseInt(frequency));
+    }
+
+    // --- Event Listeners ---
+    document.getElementById('updateFrequency').addEventListener('change', startUpdateInterval);
+    document.getElementById('resetCharts').addEventListener('click', () => {
+      // Re-initialize all data
+      lineChartData = generateLineData(DATA_POINTS, 5, 95, 50);
+      barChartData = generateBarData(7, 40, 180);
+      doughnutChartData = generateDoughnutData(4, 25, 120);
+      scatterChartData = generateScatterData(DATA_POINTS, 5, 120, 40, 250);
+      polarAreaChartData = generateDoughnutData(5, 20, 150);
+      radarChartData = [
+        generateBarData(5, 50, 110),
+        generateBarData(5, 30, 90)
+      ];
+
+      // Update all charts to reflect reset data
+      lineChart.data.datasets[0].data = lineChartData;
+      lineChart.update();
+      barChart.data.datasets[0].data = barChartData;
+      barChart.update();
+      doughnutChart.data.datasets[0].data = doughnutChartData;
+      doughnutChart.update();
+      scatterChart.data.datasets[0].data = scatterChartData;
+      scatterChart.update();
+      polarAreaChart.data.datasets[0].data = polarAreaChartData;
+      polarAreaChart.update();
+      radarChart.data.datasets[0].data = radarChartData[0];
+      radarChart.data.datasets[1].data = radarChartData[1];
+      radarChart.update();
+
+      startUpdateInterval(); // Restart interval with new data
+    });
+
+    // Initial load: Start updates and perform one immediate update
+    window.onload = () => {
+      startUpdateInterval();
+      updateAllCharts();
+    };
+  </script>
+</body>
+</html>
